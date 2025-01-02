@@ -1,0 +1,20 @@
+{
+	"name": "shredio/console",
+	"type": "library",
+	"license": "MIT",
+	"require": {
+		"php": ">=8.2"
+	},
+	"autoload": {
+		"psr-4": {
+			"Shredio\\Console\\": "src/"
+		}
+	},
+	"scripts": {
+		"phpstan": "phpstan analyse"
+	},
+	"require-dev": {
+		"phpstan/phpstan": "^2.1",
+		"symfony/console": "^7.2"
+	}
+}
