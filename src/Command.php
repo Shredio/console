@@ -49,6 +49,7 @@ abstract class Command extends \Symfony\Component\Console\Command\Command
 		$shutdown = $hookRunner->startup($input, $output);
 
 		$stopwatch = new Stopwatch();
+		$stopwatch->start();
 
 		$this->input = $input;
 		$this->output = new SymfonyStyle($input, $output);
