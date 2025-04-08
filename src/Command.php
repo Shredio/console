@@ -3,9 +3,8 @@
 namespace Shredio\Console;
 
 use ReflectionClass;
-use RuntimeException;
-use Shredio\Console\Attribute\SigtermListener;
 use Shredio\Console\Configurator\Attribute\Parser;
+use Shredio\Console\Hook\HookRunner;
 use Shredio\Console\Time\Stopwatch;
 use Shredio\Console\Time\TimeRecord;
 use Shredio\Console\Trait\HelpersTrait;
@@ -20,10 +19,6 @@ abstract class Command extends \Symfony\Component\Console\Command\Command
 	public static bool $defaultDiagnostics = true;
 
 	use HelpersTrait;
-
-	private bool $isTerminating = false;
-
-	private bool $sigtermListener = false;
 
 	protected function configure(): void
 	{
@@ -50,9 +45,8 @@ abstract class Command extends \Symfony\Component\Console\Command\Command
 
 	protected function execute(InputInterface $input, OutputInterface $output): int
 	{
-		if ($this->getAttribute(SigtermListener::class)) {
-			$this->listenToSigterm();
-		}
+		$hookRunner = new HookRunner($this);
+		$shutdown = $hookRunner->startup($input, $output);
 
 		$stopwatch = new Stopwatch();
 
@@ -62,6 +56,8 @@ abstract class Command extends \Symfony\Component\Console\Command\Command
 		(new Parser())->fillProperties($this, $input);
 
 		$code = $this->invoke($input, $output);
+
+		$shutdown();
 
 		$this->printExecutionTime($stopwatch->lap());
 		$this->printMemoryUsage(memory_get_peak_usage(true));
@@ -125,45 +121,5 @@ abstract class Command extends \Symfony\Component\Console\Command\Command
 	 * @return mixed
 	 */
 	abstract protected function invoke(InputInterface $input, OutputInterface $output);
-
-	/**
-	 * @template T of object
-	 * @param class-string<T> $attribute
-	 * @return T|null
-	 */
-	private function getAttribute(string $attribute): ?object
-	{
-		$reflection = new ReflectionClass($this);
-
-		foreach ($reflection->getAttributes($attribute) as $attribute) {
-			/** @var T */
-			return $attribute->newInstance();
-		}
-
-		return null;
-	}
-
-	private function listenToSigterm(): void
-	{
-		if (!function_exists('pcntl_signal')) {
-			throw new RuntimeException('pcntl_signal function is not available.');
-		}
-
-		pcntl_async_signals(true);
-		pcntl_signal(SIGTERM, function (): void {
-			$this->isTerminating = true;
-		});
-
-		$this->sigtermListener = true;
-	}
-
-	protected function isTerminating(): bool
-	{
-		if (!$this->sigtermListener) {
-			throw new RuntimeException(sprintf('Use attribute %s to enable SIGTERM listener', SigtermListener::class));
-		}
-
-		return $this->isTerminating;
-	}
 
 }
