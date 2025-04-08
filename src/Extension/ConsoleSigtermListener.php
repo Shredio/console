@@ -11,7 +11,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 trait ConsoleSigtermListener // @phpstan-ignore trait.unused
 {
 
-	private bool $isTerminating = false;
+	private bool $_isTerminating = false;
 
 	#[ConsoleHook]
 	public function __hookForSigterm(InputInterface $input, OutputInterface $output): callable
@@ -24,7 +24,7 @@ trait ConsoleSigtermListener // @phpstan-ignore trait.unused
 
 		pcntl_async_signals(true);
 		pcntl_signal(SIGTERM, function () use ($output, $stopwatch): void {
-			$this->isTerminating = true;
+			$this->_isTerminating = true;
 
 			$output->writeln('Received SIGTERM signal. Terminating gracefully...');
 			$stopwatch->start();
@@ -36,6 +36,14 @@ trait ConsoleSigtermListener // @phpstan-ignore trait.unused
 				$output->writeln(sprintf('Graceful termination took <info>%s</info> seconds.', $time->inSeconds()));
 			}
 		};
+	}
+
+	/**
+	 * @phpstan-impure
+	 */
+	public function isTerminating(): bool
+	{
+		return $this->_isTerminating;
 	}
 
 }
