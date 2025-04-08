@@ -9,23 +9,25 @@ use Symfony\Component\Console\Output\OutputInterface;
 trait ConsoleItemCounter // @phpstan-ignore trait.unused
 {
 
-	private int $processedItems = 0;
+	/** @var array<string, int> */
+	private array $processedItems = [];
 
 	#[ConsoleHook]
 	public function __hookForItemCounter(InputInterface $input, OutputInterface $output): callable
 	{
-		$this->processedItems = 0;
+		$this->processedItems = [];
 
 		return function () use ($output): void {
-			if ($this->processedItems > 0) {
-				$output->writeln(sprintf('Processed <info>%d</info> items.', $this->processedItems));
+			foreach ($this->processedItems as $section => $count) {
+				$output->writeln(sprintf('Processed <info>%d</info> <comment>%s</comment>.', $count, $section));
 			}
 		};
 	}
 
-	private function incrementProcessedItem(): void
+	private function incrementProcessedItem(string $section = 'items'): void
 	{
-		$this->processedItems++;
+		$this->processedItems[$section] ??= 0;
+		$this->processedItems[$section]++;
 	}
 
 }
