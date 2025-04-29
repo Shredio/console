@@ -2,6 +2,8 @@
 
 namespace Shredio\Console\Configurator\Attribute;
 
+use BackedEnum;
+use LogicException;
 use ReflectionClass;
 use ReflectionProperty;
 use Shredio\Console\Attribute\Argument;
@@ -109,7 +111,7 @@ final class Parser
 				name: $attribute->name ?? $property->getName(),
 				mode: $mode,
 				description: (string) $attribute->description,
-				default: $property->hasDefaultValue() ? $property->getDefaultValue() : null,
+				default: $property->hasDefaultValue() ? $this->normalizeInputValue($property->getDefaultValue()) : null,
 				suggestedValues: $attribute->suggestedValues
 			);
 
@@ -167,12 +169,43 @@ final class Parser
 				shortcut: $attribute->shortcut,
 				mode: $mode,
 				description: (string) $attribute->description,
-				default: $hasDefaultValue ? $property->getDefaultValue() : null,
+				default: $hasDefaultValue ? $this->normalizeInputValue($property->getDefaultValue()) : null,
 				suggestedValues: $attribute->suggestedValues
 			);
 		}
 
 		return $result;
+	}
+
+	/**
+	 * @return array<string|int|float|bool|null>|string|int|float|bool|null
+	 */
+	private function normalizeInputValue(mixed $value): array|string|int|float|bool|null
+	{
+		if ($value instanceof BackedEnum) {
+			return $value->value;
+		}
+
+		if (is_array($value)) {
+			return array_map( // @phpstan-ignore return.type (Recursive array type)
+				fn (mixed $item): array|string|int|float|bool|null => $this->normalizeInputValue($item),
+				$value
+			);
+		}
+
+		if (is_scalar($value)) {
+			return $value;
+		}
+
+		if ($value === null) {
+			return null;
+		}
+
+		if ($value instanceof \DateTimeInterface) {
+			return $value->format('c');
+		}
+
+		throw new LogicException(sprintf('Invalid value type: %s', get_debug_type($value)));
 	}
 
 	private function typecast(mixed $value, ReflectionProperty $property): mixed
