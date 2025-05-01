@@ -228,7 +228,7 @@ trait HelpersTrait
 	/**
 	 * Table helper instance with configured header and pre-defined set of rows.
 	 * @param string[] $headers
-	 * @param string[][] $rows
+	 * @param array<array<scalar|null>> $rows
 	 */
 	protected function table(array $headers, array $rows = [], string $style = 'default'): Table
 	{
