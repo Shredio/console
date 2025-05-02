@@ -10,6 +10,7 @@ use Shredio\Console\Command as ShredioCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Throwable;
 
 final class HookRunner
 {
@@ -26,7 +27,11 @@ final class HookRunner
 	{
 		$callbacks = [];
 
-		foreach ($this->hooks as [$callback, $attribute]) {
+		foreach ($this->hooks as [$callback, $type]) {
+			if ($type !== HookType::Startup) {
+				continue;
+			}
+
 			$ret = $callback($input, $output);
 
 			if (is_callable($ret)) {
@@ -39,6 +44,23 @@ final class HookRunner
 				$callback($input, $output);
 			}
 		};
+	}
+
+	public function exception(Throwable $exception, InputInterface $input, OutputInterface $output): ?int
+	{
+		foreach ($this->hooks as [$callback, $type]) {
+			if ($type !== HookType::Exception) {
+				continue;
+			}
+
+			$code = $callback($exception, $input, $output);
+
+			if ($code !== null) {
+				return $code;
+			}
+		}
+
+		return null;
 	}
 
 	/**

@@ -12,6 +12,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
+use Throwable;
 
 abstract class Command extends \Symfony\Component\Console\Command\Command
 {
@@ -56,7 +57,15 @@ abstract class Command extends \Symfony\Component\Console\Command\Command
 
 		(new Parser())->fillProperties($this, $input);
 
-		$code = $this->invoke($input, $output);
+		try {
+			$code = $this->invoke($input, $output);
+		} catch (Throwable $exception) {
+			$code = $hookRunner->exception($exception, $input, $output);
+
+			if ($code === null) {
+				throw $exception;
+			}
+		}
 
 		$shutdown();
 

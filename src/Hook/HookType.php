@@ -6,5 +6,6 @@ enum HookType
 {
 
 	case Startup;
+	case Exception;
 
 }
