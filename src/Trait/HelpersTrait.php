@@ -3,6 +3,7 @@
 namespace Shredio\Console\Trait;
 
 use LogicException;
+use Shredio\Console\Exception\TerminateCommandException;
 use Symfony\Component\Console\Formatter\OutputFormatterStyle;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Input\InputInterface;
@@ -137,6 +138,18 @@ trait HelpersTrait
 	protected function error(string $string): void
 	{
 		$this->line($string, 'error');
+	}
+
+	protected function fatalError(string $string): never
+	{
+		$this->error($string);
+
+		$this->terminate(1);
+	}
+
+	protected function terminate(int $code = 0): never
+	{
+		throw new TerminateCommandException($code);
 	}
 
 	/**

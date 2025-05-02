@@ -4,6 +4,7 @@ namespace Shredio\Console;
 
 use ReflectionClass;
 use Shredio\Console\Configurator\Attribute\Parser;
+use Shredio\Console\Exception\TerminateCommandException;
 use Shredio\Console\Hook\HookRunner;
 use Shredio\Console\Time\Stopwatch;
 use Shredio\Console\Time\TimeRecord;
@@ -59,6 +60,8 @@ abstract class Command extends \Symfony\Component\Console\Command\Command
 
 		try {
 			$code = $this->invoke($input, $output);
+		} catch (TerminateCommandException $exception) {
+			$code = $exception->exitCode;
 		} catch (Throwable $exception) {
 			$code = $hookRunner->exception($exception, $input, $output);
 
@@ -72,7 +75,15 @@ abstract class Command extends \Symfony\Component\Console\Command\Command
 		$this->printExecutionTime($stopwatch->lap());
 		$this->printMemoryUsage(memory_get_peak_usage(true));
 
-		return is_int($code) ? $code : self::SUCCESS;
+		if (is_int($code)) {
+			return $code;
+		}
+
+		if (is_bool($code)) {
+			return $code ? self::SUCCESS : self::FAILURE;
+		}
+
+		return self::SUCCESS;
 	}
 
 	protected function interact(InputInterface $input, OutputInterface $output)
@@ -128,7 +139,7 @@ abstract class Command extends \Symfony\Component\Console\Command\Command
 	}
 
 	/**
-	 * @return mixed
+	 * @return int|bool|void
 	 */
 	abstract protected function invoke(InputInterface $input, OutputInterface $output);
 
