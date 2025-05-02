@@ -2,6 +2,7 @@
 
 namespace Shredio\Console\Hook;
 
+use Closure;
 use ReflectionAttribute;
 use ReflectionClass;
 use RuntimeException;
@@ -87,12 +88,8 @@ final class HookRunner
 				continue;
 			}
 
-			if (!$method->isPublic()) {
-				throw new RuntimeException(sprintf('Method %s::%s must be public.', $reflection->name, $method->name));
-			}
-
 			$hooks[] = [
-				$object->{$method->name}(...),
+				$method->getClosure($object),
 				$attribute->type,
 			];
 		}
