@@ -18,8 +18,6 @@ use Throwable;
 abstract class Command extends \Symfony\Component\Console\Command\Command
 {
 
-	public static bool $defaultDiagnostics = true;
-
 	use HelpersTrait;
 
 	protected function configure(): void
@@ -131,11 +129,18 @@ abstract class Command extends \Symfony\Component\Console\Command\Command
 
 	private function canPrintDiagnostics(): bool
 	{
-		if (self::$defaultDiagnostics) {
+		$enabledByUser = (bool) $this->input?->getOption('diagnostics');
+
+		if ($enabledByUser) {
 			return true;
 		}
 
-		return (bool) $this->input?->getOption('diagnostics');
+		return $this->isDiagnosticsEnabledByDefault();
+	}
+
+	protected function isDiagnosticsEnabledByDefault(): bool
+	{
+		return false;
 	}
 
 	/**
